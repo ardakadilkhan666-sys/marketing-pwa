@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#6c63ff">
+  <meta name="description" content="Маркетинг науқандарының тапсырмаларын басқару">
+
+  <title>Marketing Tasks</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f3f4fa;
+      color: #222;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px #0001;
+    }
+
+    h1 {
+      text-align: center;
+      color: #554be0;
+    }
+
+    .top {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 15px;
+    }
+
+    select, input, button {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    select, input {
+      border: 1px solid #ccc;
+    }
+
+    input {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .add-btn {
+      width: 100%;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .add-btn:hover {
+      background: #554be0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      margin-top: 10px;
+      background: #f3f4fa;
+      border-radius: 9px;
+      overflow-wrap: anywhere;
+    }
+
+    .task-text {
+      flex: 1;
+    }
+
+    .done {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    .complete-btn {
+      background: #20a36b;
+      color: white;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .stats {
+      margin-top: 20px;
+      text-align: center;
+      color: #666;
+    }
+
+    .empty {
+      text-align: center;
+      color: #888;
+      padding: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="top">
+    <select id="language">
+      <option value="kk">Қазақша</option>
+      <option value="ru">Русский</option>
+    </select>
+  </div>
+
+  <h1 id="title">Маркетинг тапсырмалары</h1>
+
+  <input
+    type="text"
+    id="taskInput"
+    maxlength="120"
+    placeholder="Жаңа тапсырманы енгізіңіз..."
+  >
+
+  <button class="add-btn" id="addBtn">
+    + Тапсырма қосу
+  </button>
+
+  <ul id="taskList"></ul>
+
+  <div class="stats" id="stats"></div>
+
+</div>
+
+<script>
+  const translations = {
+    kk: {
+      title: "Маркетинг тапсырмалары",
+      placeholder: "Жаңа тапсырманы енгізіңіз...",
+      add: "+ Тапсырма қосу",
+      done: "Орындалды",
+      undone: "Қайтару",
+      empty: "Әзірге тапсырмалар жоқ",
+      error: "Тапсырма мәтінін енгізіңіз!",
+      stats: "Барлығы: ",
+      completed: " | Орындалды: "
+    },
+
+    ru: {
+      title: "Маркетинговые задачи",
+      placeholder: "Введите новую задачу...",
+      add: "+ Добавить задачу",
+      done: "Выполнено",
+      undone: "Вернуть",
+      empty: "Пока нет задач",
+      error: "Введите текст задачи!",
+      stats: "Всего: ",
+      completed: " | Выполнено: "
+    }
+  };
+
+  let tasks = JSON.parse(
+    localStorage.getItem("marketingTasks") || "[]"
+  );
+
+  let currentLanguage = "kk";
+
+  const input = document.getElementById("taskInput");
+  const list = document.getElementById("taskList");
+  const language = document.getElementById("language");
+
+  function saveTasks() {
+    localStorage.setItem(
+      "marketingTasks",
+      JSON.stringify(tasks)
+    );
+  }
+
+  function renderTasks() {
+    list.innerHTML = "";
+
+    const t = translations[currentLanguage];
+
+    if (tasks.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "empty";
+      empty.textContent = t.empty;
+      list.appendChild(empty);
+    }
+
+    tasks.forEach((task, index) => {
+      const li = document.createElement("li");
+
+      const span = document.createElement("span");
+      span.className = "task-text";
+
+      // Қауіпсіз көрсету: пайдаланушы мәтіні HTML ретінде орындалмайды.
+      span.textContent = task.text;
+
+      if (task.completed) {
+        span.classList.add("done");
+      }
+
+      const button = document.createElement("button");
+      button.className = "complete-btn";
+      button.textContent = task.completed ? t.undone : t.done;
+
+      button.addEventListener("click", () => {
+        tasks[index].completed = !tasks[index].completed;
+        saveTasks();
+        renderTasks();
+      });
+
+      li.appendChild(span);
+      li.appendChild(button);
+      list.appendChild(li);
+    });
+
+    const completed = tasks.filter(
+      task => task.completed
+    ).length;
+
+    document.getElementById("stats").textContent =
+      t.stats + tasks.length +
+      t.completed + completed;
+  }
+
+  function addTask() {
+    const text = input.value.trim();
+
+    if (!text) {
+      alert(translations[currentLanguage].error);
+      input.focus();
+      return;
+    }
+
+    if (text.length > 120) {
+      return;
+    }
+
+    tasks.push({
+      id: Date.now(),
+      text: text,
+      completed: false
+    });
+
+    saveTasks();
+
+    input.value = "";
+    renderTasks();
+  }
+
+  function changeLanguage(lang) {
+    currentLanguage = lang;
+
+    const t = translations[lang];
+
+    document.documentElement.lang = lang;
+
+    document.getElementById("title").textContent =
+      t.title;
+
+    input.placeholder = t.placeholder;
+
+    document.getElementById("addBtn").textContent =
+      t.add;
+
+    renderTasks();
+  }
+
+  document.getElementById("addBtn")
+    .addEventListener("click", addTask);
+
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      addTask();
+    }
+  });
+
+  language.addEventListener("change", event => {
+    changeLanguage(event.target.value);
+  });
+
+  renderTasks();
+
+  // Service Worker тіркеу
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .catch(error => {
+          console.error("SW қатесі:", error);
+        });
+    });
+  }
+</script>
+
+</body>
+</html>
